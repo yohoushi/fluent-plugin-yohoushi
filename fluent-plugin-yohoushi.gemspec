@@ -4,7 +4,7 @@ $:.push File.expand_path("../lib", __FILE__)
 Gem::Specification.new do |s|
   s.name        = "fluent-plugin-yohoushi"
   s.version     = "0.0.1"
-  s.authors     = ["Naotoshi SEO"]
+  s.authors     = ["Naotoshi Seo"]
   s.email       = ["sonots@gmail.com"]
   s.homepage    = "https://github.com/sonots/fluent-plugin-yohoushi"
   s.summary     = "fluentd plugin to post data to yohoushi"
@@ -23,4 +23,5 @@ Gem::Specification.new do |s|
   s.add_development_dependency "rake"
   s.add_development_dependency "rspec"
   s.add_development_dependency "pry"
+  s.add_development_dependency "pry-nav"
 end
