@@ -26,13 +26,18 @@ then fluent-plugin-yohoushi posts data to yohoshi similarly like
 
     The base uri of yohoushi. `mapping1` or `base_uri` is required.
 
-- mapping[1-20] (semi-required)
+- mapping\[1-20\] (semi-required)
 
     This is an option for [multiforecast-client](https://github.com/yohoushi/multiforecast-client). `mapping1` or `base_uri` is required. 
 
     With this option, you can post graph data directly to multiple growthforecasts, not via yohoushi, which is more efficient.
 
-- key[1-20] (semi-required)
+    ex)
+
+        mapping1 /foobar http://growthforecast1.local:5125
+        mapping2 /       http://growthforecast2.local:5125
+
+- key\[1-20\] (semi-required)
 
     A pair of a field name of the input record, and a graph path to be posted. `key1` or `key_pattern` is required.
 
@@ -55,7 +60,7 @@ then fluent-plugin-yohoushi posts data to yohoshi similarly like
 
 - enable\_float\_number
 
-    Set to `true` if you are enabling `--enable\_float\_number` option of GrowthForecast. Default is `false`
+    Set to `true` if you are enabling `--enable_float_number` option of GrowthForecast. Default is `false`
 
 - mode
 
