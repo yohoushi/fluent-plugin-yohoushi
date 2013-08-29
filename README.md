@@ -1,54 +1,85 @@
-# fluent-plugin-grep [![Build Status](https://secure.travis-ci.org/sonots/fluent-plugin-grep.png?branch=master)](http://travis-ci.org/sonots/fluent-plugin-grep) [![Dependency Status](https://gemnasium.com/sonots/fluent-plugin-grep.png)](https://gemnasium.com/sonots/fluent-plugin-grep) [![Coverage Status](https://coveralls.io/repos/sonots/fluent-plugin-grep/badge.png?branch=master)](https://coveralls.io/r/sonots/fluent-plugin-grep)
+# fluent-plugin-yohoushi [![Build Status](https://secure.travis-ci.org/sonots/fluent-plugin-yohoushi.png?branch=master)](http://travis-ci.org/sonots/fluent-plugin-yohoushi) [![Dependency Status](https://gemnasium.com/sonots/fluent-plugin-yohoushi.png)](https://gemnasium.com/sonots/fluent-plugin-yohoushi)
 
-Fluentd plugin to grep messages.
+Fluentd plugin to post data to yohoushi where [yohoushi](http://yohoushi.github.io/yohoushi/) is a visualization graph tool.
 
 ## Configuration
 
-    <match syslog.**>
-      type grep
-      input_key message
-      regexp WARN
-      exclude favicon.ico
-      add_tag_prefix greped
+    <match foo.bar.**>
+      type yohoushi
+      base_uri http://yohoushi.local:4804
+      key1 foo_count /foobar/foo_count
+      key2 bar_count /foobar/bar_count
     </source>
 
 Assuming following inputs are coming:
 
-    foo.bar: {"foo":"bar","message":"2013/01/13T07:02:11.124202 INFO GET /ping"}
-    foo.bar: {"foo":"bar","message":"2013/01/13T07:02:13.232645 WARN POST /auth"}
-    foo.bar: {"foo":"bar","message":"2013/01/13T07:02:21.542145 WARN GET /favicon.ico"}
-    foo.bar: {"foo":"bar","message":"2013/01/13T07:02:43.632145 WARN POST /login"}
+    foo.bar: {"foo_count":1,"bar_count":2}
 
-then output bocomes as belows (like, | grep WARN | grep -v favicon.ico):
+then fluent-plugin-yohoushi posts data to yohoshi similarly like
 
-    greped.foo.bar: {"foo":"bar","message":"2013/01/13T07:02:13.232645 WARN POST /auth"}
-    greped.foo.bar: {"foo":"bar","message":"2013/01/13T07:02:43.632145 WARN POST /login"}
+    $ curl -d number=1 http://yohoushi.local:4804/api/graphs/foobar/foo_count
+    $ curl -d number=2 http://yohoushi.local:4804/api/graphs/foobar/bar_count
 
 ## Parameters
 
-- input_key
+- base\_uri (semi-required)
 
-    The target field key to grep out
+    The base uri of yohoushi. `mapping1` or `base_uri` is required.
 
-- regexp
+- mapping[1-20] (semi-required)
 
-    The filtering regular expression
+    This is an option for [multiforecast-client](https://github.com/yohoushi/multiforecast-client). `mapping1` or `base_uri` is required. 
 
-- exclude
+    With this option, you can post graph data directly to multiple growthforecasts, not via yohoushi, which is more efficient.
 
-    The excluding regular expression like grep -v
+- key[1-20] (semi-required)
 
-- tag
+    A pair of a field name of the input record, and a graph path to be posted. `key1` or `key_pattern` is required.
 
-    The output tag name
+    SECRET TRICK: You can use placeholders for the graph path. See Placeholders section.
 
-- add_tag_prefix
+- key\_pattern (semi-requierd)
 
-    Add tag prefix for output message
+    A pair of a regular expression to specify field names of the input record, and an expression to specify graph paths. `key1` or `key_pattern` is required. 
 
-- replace_invalid_sequence
+    For example, a configuration like
 
-    Replace invalid byte sequence in UTF-8 with '?' character if `true`
+        key_pattern _count$ /foobar/${key}
+
+    instead of key1, key2 in the above example gives the same effect. 
+
+        $ curl -d number=1 http://yohoushi.local:4804/api/graphs/foobar/foo_count
+        $ curl -d number=2 http://yohoushi.local:4804/api/graphs/foobar/bar_count
+
+    See Placeholders section to know more about placeholders such as ${key}.
+
+- enable\_float\_number
+
+    Set to `true` if you are enabling `--enable\_float\_number` option of GrowthForecast. Default is `false`
+
+- mode
+
+    The graph mode (either of gauge, count, or modified). Just same as mode of GrowthForecast POST parameter. Default is gauge.
+
+### Placeholders
+
+The keys of input json are available as placeholders. In the above example, 
+
+* ${foo_count}
+* ${bar_count}
+
+shall be available. In addition, following placeholders are reserved: 
+
+* ${hostname} hostname
+* ${tag} input tag
+* ${tags} input tag splitted by '.'
+* ${time} time of the event
+* ${key} the matched key value with `key_pattern` or `key1`, `key2`, ...
+
+It is also possible to write a ruby code in placeholders, so you may write some codes as
+
+* ${time.strftime('%Y-%m-%dT%H:%M:%S%z')}
+* ${tags.last}  
 
 ## ChangeLog
 
