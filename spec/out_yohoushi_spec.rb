@@ -3,14 +3,15 @@ require_relative 'spec_helper'
 
 shared_context "stub_post_graph" do |path|
   before do
-    stub_request(:post, "#{base_uri}/api/#{path}").
+    stub_request(:post, "#{growthforecast_base_uri}/api/#{path}").
     to_return(:status => 200, :body => { "error" => 0, "data" => "blahblah" }.to_json)
   end
 end
 
 describe Fluent::YohoushiOutput do
   before { Fluent::Test.setup }
-  let(:base_uri) { 'http://localhost:5125' }
+  let(:yohoushi_base_uri) { 'http://localhost:4804' }
+  let(:growthforecast_base_uri) { 'http://localhost:5125' }
   let(:tag) { 'test' }
   let(:driver) { Fluent::Test::OutputTestDriver.new(Fluent::YohoushiOutput, tag).configure(config) }
   let(:emit) { driver.run { messages.each {|message| driver.emit(message, time) } } }
@@ -24,7 +25,7 @@ describe Fluent::YohoushiOutput do
     context "check least" do
       subject { driver.instance }
       let(:config) {%[
-        mapping_to #{base_uri}
+        mapping_to #{growthforecast_base_uri}
         keys foo
       ]}
       its(:mapping_from) { should == [''] }
@@ -43,7 +44,7 @@ describe Fluent::YohoushiOutput do
     context 'typical' do
       let(:config) {%[
         mapping_from
-        mapping_to #{base_uri}
+        mapping_to #{growthforecast_base_uri}
         keys field1,field2
         paths /path/to/field1,/path/to/field2
       ]}
@@ -63,7 +64,7 @@ describe Fluent::YohoushiOutput do
     context 'no path' do
       let(:config) {%[
         mapping_from
-        mapping_to #{base_uri}
+        mapping_to #{growthforecast_base_uri}
         keys path/to/field1,path/to/field2
       ]}
       let(:messages) do
@@ -90,6 +91,21 @@ describe Fluent::YohoushiOutput do
         stub_request(:post, "http://localhost:5125/api/app1/to/field1").
         to_return(:status => 200, :body => { "error" => 0, "data" => "blahblah" }.to_json)
         stub_request(:post, "http://localhost:5000/api/app2/to/field2").
+        to_return(:status => 200, :body => { "error" => 0, "data" => "blahblah" }.to_json)
+      end
+      before { Fluent::Engine.stub(:now).and_return(time) }
+      it { emit }
+    end
+
+    context 'base_uri' do
+      let(:config) {%[
+        base_uri #{yohoushi_base_uri}
+        keys field1
+        paths /app1/to/field1,
+      ]}
+      before do
+        # should post via yohoushi client
+        stub_request(:post, "#{yohoushi_base_uri}/api/graphs/app1/to/field1").
         to_return(:status => 200, :body => { "error" => 0, "data" => "blahblah" }.to_json)
       end
       before { Fluent::Engine.stub(:now).and_return(time) }

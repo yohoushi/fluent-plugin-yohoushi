@@ -19,6 +19,7 @@ Gem::Specification.new do |s|
 
   s.add_runtime_dependency "fluentd"
   s.add_runtime_dependency "multiforecast-client"
+  s.add_runtime_dependency "yohoushi-client"
 
   s.add_development_dependency "rake"
   s.add_development_dependency "rspec"
