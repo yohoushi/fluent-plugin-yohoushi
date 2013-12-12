@@ -25,7 +25,7 @@ class Fluent::YohoushiOutput < Fluent::Output
     when 'modified'
       :modified
     else
-      raise ConfigError, "stdout output output_type should be `gauge`, `count`, or `modified`"
+      raise Fluent::ConfigError, "stdout output output_type should be `gauge`, `count`, or `modified`"
     end
   end
 
