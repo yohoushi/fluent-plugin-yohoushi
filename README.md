@@ -64,7 +64,7 @@ then fluent-plugin-yohoushi posts data to yohoshi similarly like
 
 - mode
 
-    The graph mode (either of gauge, count, or modified). Just same as mode of GrowthForecast POST parameter. Default is gauge.
+    The graph mode (either of gauge, count, modified, or derive). Just same as mode of GrowthForecast POST parameter. Default is gauge.
 
 ### Placeholders
 
