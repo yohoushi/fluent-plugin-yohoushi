@@ -9,6 +9,7 @@ Gem::Specification.new do |s|
   s.homepage    = "https://github.com/sonots/fluent-plugin-yohoushi"
   s.summary     = "fluentd plugin to post data to yohoushi"
   s.description = s.summary
+  s.licenses    = ["MIT"]
 
   s.rubyforge_project = "fluent-plugin-yohoushi"
 
