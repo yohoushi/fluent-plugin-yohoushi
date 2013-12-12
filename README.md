@@ -1,4 +1,4 @@
-# fluent-plugin-yohoushi [![Build Status](https://secure.travis-ci.org/sonots/fluent-plugin-yohoushi.png?branch=master)](http://travis-ci.org/sonots/fluent-plugin-yohoushi) [![Dependency Status](https://gemnasium.com/sonots/fluent-plugin-yohoushi.png)](https://gemnasium.com/sonots/fluent-plugin-yohoushi)
+# fluent-plugin-yohoushi [![Build Status](https://secure.travis-ci.org/yohoushi/fluent-plugin-yohoushi.png?branch=master)](http://travis-ci.org/sonots/fluent-plugin-yohoushi) [![Dependency Status](https://gemnasium.com/sonots/fluent-plugin-yohoushi.png)](https://gemnasium.com/yohoushi/fluent-plugin-yohoushi)
 
 Fluentd plugin to post data to yohoushi where [yohoushi](http://yohoushi.github.io/yohoushi/) is a visualization graph tool.
 
