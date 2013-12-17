@@ -77,14 +77,15 @@ shall be available. In addition, following placeholders are reserved:
 
 * ${hostname} hostname
 * ${tag} input tag
-* ${tags} input tag splitted by '.'
+* ${tag\_parts} input tag splitted by '.'
+* ${tags} input tag splitted by '.' (obsolete)
 * ${time} time of the event
 * ${key} the matched key value with `key_pattern` or `key1`, `key2`, ...
 
 It is also possible to write a ruby code in placeholders, so you may write some codes as
 
 * ${time.strftime('%Y-%m-%dT%H:%M:%S%z')}
-* ${tags.last}  
+* ${tag\_parts.last}
 
 ## ChangeLog
 
