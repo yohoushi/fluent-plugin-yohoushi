@@ -20,6 +20,7 @@ describe Fluent::YohoushiOutput do
   let(:growthforecast_base_uri) { 'http://localhost:5125' }
   let(:tag) { 'test' }
   let(:driver) { Fluent::Test::OutputTestDriver.new(Fluent::YohoushiOutput, tag).configure(config) }
+  let(:instance) { driver.instance }
   let(:emit) { driver.run { messages.each {|message| driver.emit(message, time) } } }
 
   describe 'test configure' do
@@ -135,6 +136,24 @@ describe Fluent::YohoushiOutput do
       include_context "stub_growthforecast_post_graph", "path/to/bar_count" unless ENV["MOCK"] == "off"
       before { Fluent::Engine.stub(:now).and_return(time) }
       it { emit }
+    end
+  end
+
+  describe 'expand_placeholder' do
+    let(:config) { %[mapping1 / http://foo\nkey1 foo bar] }
+    let(:tag) { 'fluent.error' }
+    let(:record) { { 'foo_count' => "1", 'bar_count' => "1" } }
+    let(:tag_parts) { tag.split('.') }
+    let(:time) { Time.now.to_i }
+
+    context 'tags (obsolete)' do
+      let(:path) { '/path/to/${tags[-1]}' }
+      it { instance.expand_placeholder(path, record, tag, tag_parts, time, 'foo_count').should == '/path/to/error' }
+    end
+
+    context 'tag_parts' do
+      let(:path) { '/path/to/${tag_parts[-1]}' }
+      it { instance.expand_placeholder(path, record, tag, tag_parts, time, 'foo_count').should == '/path/to/error' }
     end
   end
 end

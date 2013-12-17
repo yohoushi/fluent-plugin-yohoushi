@@ -94,12 +94,12 @@ class Fluent::YohoushiOutput < Fluent::Output
   end
 
   def emit(tag, es, chain)
-    tags = tag.split('.')
+    tag_parts = tag.split('.')
     if @key_pattern
       es.each do |time, record|
         record.each do |key, value|
           next unless key =~ @key_pattern
-          path = expand_placeholder(@key_pattern_path, record, tag, tags, time, key)
+          path = expand_placeholder(@key_pattern_path, record, tag, tag_parts, time, key)
           post(path, value)
         end
       end
@@ -107,7 +107,7 @@ class Fluent::YohoushiOutput < Fluent::Output
       es.each do |time, record|
         @keys.each do |key, path|
           next unless value = record[key]
-          path = expand_placeholder(path, record, tag, tags, time, key)
+          path = expand_placeholder(path, record, tag, tag_parts, time, key)
           post(path, value)
         end
       end
@@ -118,12 +118,11 @@ class Fluent::YohoushiOutput < Fluent::Output
     $log.warn "out_yohoushi: #{e.class} #{e.message} #{e.backtrace.first}"
   end
 
-  private
-
-  def expand_placeholder(str, record, tag, tags, time, key)
+  def expand_placeholder(str, record, tag, tag_parts, time, key)
     struct = UndefOpenStruct.new(record)
     struct.tag  = tag
-    struct.tags = tags
+    struct.tags = tag_parts # obsolete
+    struct.tag_parts = tag_parts
     struct.time = time
     struct.key  = key
     struct.hostname = @hostname
