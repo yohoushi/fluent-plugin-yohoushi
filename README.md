@@ -66,6 +66,10 @@ then fluent-plugin-yohoushi posts data to yohoshi similarly like
 
     The graph mode (either of gauge, count, modified, or derive). Just same as mode of GrowthForecast POST parameter. Default is gauge.
 
+- enable\_ruby *bool*
+
+    Enable to use ruby codes in placeholders. See Placeholders section. Default is true (just for lower version compatibility).
+
 ### Placeholders
 
 The keys of input json are available as placeholders. In the above example, 
@@ -76,16 +80,35 @@ The keys of input json are available as placeholders. In the above example,
 shall be available. In addition, following placeholders are reserved: 
 
 * ${hostname} hostname
-* ${tag} input tag
-* ${tag\_parts} input tag splitted by '.'
-* ${tags} input tag splitted by '.' (obsolete)
 * ${time} time of the event
 * ${key} the matched key value with `key_pattern` or `key1`, `key2`, ...
+* ${tag} input tag
+* ${tags[N]} (Obsolete. Use tag\_parts) Input tag splitted by '.'
+* ${tag\_parts[N]} Input tag splitted by '.' indexed with N such as `${tag_parts[0]}`, `${tag_parts[-1]}`. 
+* ${tag\_prefix[N]} Tag parts before and on the index N. For example,
 
-It is also possible to write a ruby code in placeholders, so you may write some codes as
+        Input tag: prefix.test.tag.suffix
+        
+        ${tag_prefix[0]}  => prefix
+        ${tag_prefix[1]}  => prefix.test
+        ${tag_prefix[-2]} => prefix.test.tag
+        ${tag_prefix[-1]} => prefix.test.tag.suffix
+
+* ${tag\_suffix[N]} Tag parts after and on the index N. For example,
+
+        Input tag: prefix.test.tag.suffix
+    
+        ${tag_suffix[0]}  => prefix.test.tag.suffix
+        ${tag_suffix[1]}  => test.tag.suffix
+        ${tag_suffix[-2]} => tag.suffix
+        ${tag_suffix[-1]} => suffix
+
+It is also possible to write a ruby code in placeholders if you set `enable_ruby true` option, so you may write some codes as
 
 * ${time.strftime('%Y-%m-%dT%H:%M:%S%z')}
 * ${tag\_parts.last}
+
+but, please note that enabling ruby codes is not encouraged by security reasons and also in terms of the performance.
 
 ## ChangeLog
 
@@ -101,5 +124,5 @@ See [CHANGELOG.md](CHANGELOG.md) for details.
 
 ## Copyright
 
-Copyright (c) 2013 Naotoshi SEO. See [LICENSE](LICENSE) for details.
+Copyright (c) 2013 Naotoshi Seo. See [LICENSE](LICENSE) for details.
 
