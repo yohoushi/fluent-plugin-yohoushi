@@ -170,18 +170,18 @@ class Fluent::YohoushiOutput < Fluent::Output
     attr_reader :placeholders
 
     def prepare_placeholders(time, record, opts)
-      placeholders = { '${time}' => time.to_s }
-      record.each {|key, val| placeholders.store("${#{key}}", val) }
+      placeholders = { '${time}' => Time.at(time).to_s }
+      record.each {|key, value| placeholders.store("${#{key}}", value) }
 
-      opts.each do |key, val|
-        if val.kind_of?(Array)
-          size = val.size
-          val.each_with_index { |t, idx|
-            placeholders.store("${#{key}[#{idx}]}", t)
-            placeholders.store("${#{key}[#{idx-size}]}", t) # support [-1]
+      opts.each do |key, value|
+        if value.kind_of?(Array) # tag_parts, etc
+          size = value.size
+          value.each_with_index { |v, idx|
+            placeholders.store("${#{key}[#{idx}]}", v)
+            placeholders.store("${#{key}[#{idx-size}]}", v) # support [-1]
           }
         else # string, interger, float, and others?
-          placeholders["${#{key}}"] = val
+          placeholders.store("${#{key}}", value)
         end
       end
 
@@ -206,8 +206,8 @@ class Fluent::YohoushiOutput < Fluent::Output
     # @param [Hash]   opts        others
     def prepare_placeholders(time, record, opts)
       struct = UndefOpenStruct.new(record)
-      struct.time = time
-      opts.each {|key, val| struct.__send__("#{key}=", val) }
+      struct.time = Time.at(time)
+      opts.each {|key, value| struct.__send__("#{key}=", value) }
       @placeholders = struct
     end
 
