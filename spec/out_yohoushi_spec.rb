@@ -145,14 +145,14 @@ describe Fluent::YohoushiOutput do
     let(:time) { Time.now.to_i }
     let(:record) { { 'foo_count' => "1" } }
     let(:emit) { driver.run { driver.emit(record, time) } }
-    let(:expected_path)  { '/fluent/error/fluent.error/1/foo_count' }
+    let(:expected_path)  { "/fluent/error/fluent.error/1/foo_count/#{Time.at(time)}" }
     let(:expected_value) { '1' }
     before { driver.instance.should_receive(:post).with(expected_path, expected_value) }
 
     context 'keyN' do
       let(:config) {%[
         mapping1 / http://foobar
-        key1 foo_count /${tags.first}/${tag_parts.last}/${tag_prefix[1]}/${foo_count}/${CGI.unescape(key)}
+        key1 foo_count /${tags.first}/${tag_parts.last}/${tag_prefix[1]}/${foo_count}/${CGI.unescape(key)}/${time}
         enable_ruby true
       ]}
       it { emit }
@@ -161,7 +161,7 @@ describe Fluent::YohoushiOutput do
     context 'key_pattern' do
       let(:config) {%[
         mapping1 / http://foobar
-        key_pattern _count$ /${tags.first}/${tag_parts.last}/${tag_prefix[1]}/${foo_count}/${URI.unescape(key)}
+        key_pattern _count$ /${tags.first}/${tag_parts.last}/${tag_prefix[1]}/${foo_count}/${URI.unescape(key)}/${time.to_s}
         enable_ruby true
       ]}
       it { emit }
@@ -174,14 +174,14 @@ describe Fluent::YohoushiOutput do
     let(:time) { Time.now.to_i }
     let(:record) { { 'foo_count' => "1" } }
     let(:emit) { driver.run { driver.emit(record, time) } }
-    let(:expected_path)  { '/fluent/error/fluent.error/1/foo_count' }
+    let(:expected_path)  { "/fluent/error/fluent.error/1/foo_count/#{Time.at(time)}" }
     let(:expected_value) { '1' }
     before { driver.instance.should_receive(:post).with(expected_path, expected_value) }
 
     context 'keyN' do
       let(:config) {%[
         mapping1 / http://foobar
-        key1 foo_count /${tags[0]}/${tag_parts[-1]}/${tag_prefix[1]}/${foo_count}/${key}
+        key1 foo_count /${tags[0]}/${tag_parts[-1]}/${tag_prefix[1]}/${foo_count}/${key}/${time}
         enable_ruby false
       ]}
       it { emit }
@@ -190,7 +190,7 @@ describe Fluent::YohoushiOutput do
     context 'key_pattern' do
       let(:config) {%[
         mapping1 / http://foobar
-        key_pattern _count$ /${tags[0]}/${tag_parts[-1]}/${tag_prefix[1]}/${foo_count}/${key}
+        key_pattern _count$ /${tags[0]}/${tag_parts[-1]}/${tag_prefix[1]}/${foo_count}/${key}/${time}
         enable_ruby false
       ]}
       it { emit }

@@ -170,7 +170,7 @@ class Fluent::YohoushiOutput < Fluent::Output
     attr_reader :placeholders
 
     def prepare_placeholders(time, record, opts)
-      placeholders = { '${time}' => time.to_s }
+      placeholders = { '${time}' => Time.at(time).to_s }
       record.each {|key, val| placeholders.store("${#{key}}", val) }
 
       opts.each do |key, val|
@@ -206,7 +206,7 @@ class Fluent::YohoushiOutput < Fluent::Output
     # @param [Hash]   opts        others
     def prepare_placeholders(time, record, opts)
       struct = UndefOpenStruct.new(record)
-      struct.time = time
+      struct.time = Time.at(time)
       opts.each {|key, val| struct.__send__("#{key}=", val) }
       @placeholders = struct
     end
