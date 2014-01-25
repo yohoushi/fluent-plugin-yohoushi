@@ -3,11 +3,11 @@ $:.push File.expand_path("../lib", __FILE__)
 
 Gem::Specification.new do |s|
   s.name        = "fluent-plugin-yohoushi"
-  s.version     = "0.0.3"
+  s.version     = "0.0.4"
   s.authors     = ["Naotoshi Seo"]
   s.email       = ["sonots@gmail.com"]
   s.homepage    = "https://github.com/sonots/fluent-plugin-yohoushi"
-  s.summary     = "fluentd plugin to post data to yohoushi"
+  s.summary     = "Fluentd plugin to post data to yohoushi"
   s.description = s.summary
   s.licenses    = ["MIT"]
 
