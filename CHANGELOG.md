@@ -1,3 +1,9 @@
+## 0.0.5 (2014/01/25)
+
+Fixes:
+
+* Fix ${time} placeholder
+
 ## 0.0.4 (2014/01/25)
 
 Enhancement:
