@@ -139,21 +139,61 @@ describe Fluent::YohoushiOutput do
     end
   end
 
-  describe 'expand_placeholder' do
-    let(:config) { %[mapping1 / http://foo\nkey1 foo bar] }
+  describe 'expand_placeholder with enable_ruby true' do
+    let(:config) { %[mapping1 / http://foo] }
     let(:tag) { 'fluent.error' }
-    let(:record) { { 'foo_count' => "1", 'bar_count' => "1" } }
-    let(:tag_parts) { tag.split('.') }
     let(:time) { Time.now.to_i }
+    let(:record) { { 'foo_count' => "1" } }
+    let(:emit) { driver.run { driver.emit(record, time) } }
+    let(:expected_path)  { '/fluent/error/fluent.error/1/foo_count' }
+    let(:expected_value) { '1' }
+    before { driver.instance.should_receive(:post).with(expected_path, expected_value) }
 
-    context 'tags (obsolete)' do
-      let(:path) { '/path/to/${tags[-1]}' }
-      it { instance.expand_placeholder(path, record, tag, tag_parts, time, 'foo_count').should == '/path/to/error' }
+    context 'keyN' do
+      let(:config) {%[
+        mapping1 / http://foobar
+        key1 foo_count /${tags.first}/${tag_parts.last}/${tag_prefix[1]}/${foo_count}/${CGI.unescape(key)}
+        enable_ruby true
+      ]}
+      it { emit }
     end
 
-    context 'tag_parts' do
-      let(:path) { '/path/to/${tag_parts[-1]}' }
-      it { instance.expand_placeholder(path, record, tag, tag_parts, time, 'foo_count').should == '/path/to/error' }
+    context 'key_pattern' do
+      let(:config) {%[
+        mapping1 / http://foobar
+        key_pattern _count$ /${tags.first}/${tag_parts.last}/${tag_prefix[1]}/${foo_count}/${URI.unescape(key)}
+        enable_ruby true
+      ]}
+      it { emit }
+    end
+  end
+
+  describe 'expand_placeholder with enable_ruby false' do
+    let(:config) { %[mapping1 / http://foo] }
+    let(:tag) { 'fluent.error' }
+    let(:time) { Time.now.to_i }
+    let(:record) { { 'foo_count' => "1" } }
+    let(:emit) { driver.run { driver.emit(record, time) } }
+    let(:expected_path)  { '/fluent/error/fluent.error/1/foo_count' }
+    let(:expected_value) { '1' }
+    before { driver.instance.should_receive(:post).with(expected_path, expected_value) }
+
+    context 'keyN' do
+      let(:config) {%[
+        mapping1 / http://foobar
+        key1 foo_count /${tags[0]}/${tag_parts[-1]}/${tag_prefix[1]}/${foo_count}/${key}
+        enable_ruby false
+      ]}
+      it { emit }
+    end
+
+    context 'key_pattern' do
+      let(:config) {%[
+        mapping1 / http://foobar
+        key_pattern _count$ /${tags[0]}/${tag_parts[-1]}/${tag_prefix[1]}/${foo_count}/${key}
+        enable_ruby false
+      ]}
+      it { emit }
     end
   end
 end

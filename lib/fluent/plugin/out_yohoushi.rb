@@ -30,6 +30,7 @@ class Fluent::YohoushiOutput < Fluent::Output
       raise Fluent::ConfigError, "stdout output output_type should be `gauge`, `count`, `modified`, or `derive`"
     end
   end
+  config_param :enable_ruby, :bool, :default => true # true for lower version compatibility
 
   # for test
   attr_reader :client
@@ -70,6 +71,17 @@ class Fluent::YohoushiOutput < Fluent::Output
     end
     raise Fluent::ConfigError, "Either of `key_pattern` or `key1` must be specified" if (@key_pattern.nil? and @keys.empty?)
 
+    @placeholder_expander =
+      if @enable_ruby
+        # require utilities which would be used in ruby placeholders
+        require 'pathname'
+        require 'uri'
+        require 'cgi'
+        RubyPlaceholderExpander.new
+      else
+        PlaceholderExpander.new
+      end
+
     @hostname = Socket.gethostname
   rescue => e
     raise Fluent::ConfigError, "#{e.class} #{e.message} #{e.backtrace.first}"
@@ -95,11 +107,22 @@ class Fluent::YohoushiOutput < Fluent::Output
 
   def emit(tag, es, chain)
     tag_parts = tag.split('.')
+    tag_prefix = tag_prefix(tag_parts)
+    tag_suffix = tag_suffix(tag_parts)
+    placeholders = {
+      'tag' => tag,
+      'tags' => tag_parts, # for lower compatibility
+      'tag_parts' => tag_parts,
+      'tag_prefix' => tag_prefix,
+      'tag_suffix' => tag_suffix,
+      'hostname' => @hostname,
+    }
     if @key_pattern
       es.each do |time, record|
         record.each do |key, value|
           next unless key =~ @key_pattern
-          path = expand_placeholder(@key_pattern_path, record, tag, tag_parts, time, key)
+          placeholders['key'] = key
+          path = expand_placeholder(@key_pattern_path, time, record, placeholders)
           post(path, value)
         end
       end
@@ -107,7 +130,8 @@ class Fluent::YohoushiOutput < Fluent::Output
       es.each do |time, record|
         @keys.each do |key, path|
           next unless value = record[key]
-          path = expand_placeholder(path, record, tag, tag_parts, time, key)
+          placeholders['key'] = key
+          path = expand_placeholder(path, time, record, placeholders)
           post(path, value)
         end
       end
@@ -118,21 +142,87 @@ class Fluent::YohoushiOutput < Fluent::Output
     $log.warn "out_yohoushi: #{e.class} #{e.message} #{e.backtrace.first}"
   end
 
-  def expand_placeholder(str, record, tag, tag_parts, time, key)
-    struct = UndefOpenStruct.new(record)
-    struct.tag  = tag
-    struct.tags = tag_parts # obsolete
-    struct.tag_parts = tag_parts
-    struct.time = time
-    struct.key  = key
-    struct.hostname = @hostname
-    str = str.gsub(/\$\{([^}]+)\}/, '#{\1}') # ${..} => #{..}
-    eval "\"#{str}\"", struct.instance_eval { binding }
+  def expand_placeholder(value, time, record, opts)
+    @placeholder_expander.prepare_placeholders(time, record, opts)
+    @placeholder_expander.expand(value)
   end
 
-  class UndefOpenStruct < OpenStruct
-    (Object.instance_methods).each do |m|
-      undef_method m unless m.to_s =~ /^__|respond_to_missing\?|object_id|public_methods|instance_eval|method_missing|define_singleton_method|respond_to\?|new_ostruct_member/
+  def tag_prefix(tag_parts)
+    return [] if tag_parts.empty?
+    tag_prefix = [tag_parts.first]
+    1.upto(tag_parts.size-1).each do |i|
+      tag_prefix[i] = "#{tag_prefix[i-1]}.#{tag_parts[i]}"
+    end
+    tag_prefix
+  end
+
+  def tag_suffix(tag_parts)
+    return [] if tag_parts.empty?
+    rev_tag_parts = tag_parts.reverse
+    rev_tag_suffix = [rev_tag_parts.first]
+    1.upto(tag_parts.size-1).each do |i|
+      rev_tag_suffix[i] = "#{rev_tag_parts[i]}.#{rev_tag_suffix[i-1]}"
+    end
+    rev_tag_suffix.reverse
+  end
+
+  class PlaceholderExpander
+    attr_reader :placeholders
+
+    def prepare_placeholders(time, record, opts)
+      placeholders = { '${time}' => time.to_s }
+      record.each {|key, val| placeholders.store("${#{key}}", val) }
+
+      opts.each do |key, val|
+        if val.kind_of?(Array)
+          size = val.size
+          val.each_with_index { |t, idx|
+            placeholders.store("${#{key}[#{idx}]}", t)
+            placeholders.store("${#{key}[#{idx-size}]}", t) # support [-1]
+          }
+        else # string, interger, float, and others?
+          placeholders["${#{key}}"] = val
+        end
+      end
+
+      @placeholders = placeholders
+    end
+
+    def expand(str)
+      str.gsub(/(\${[a-z_]+(\[-?[0-9]+\])?}|__[A-Z_]+__)/) {
+        $log.warn "record_reformer: unknown placeholder `#{$1}` found" unless @placeholders.include?($1)
+        @placeholders[$1]
+      }
+    end
+  end
+
+  class RubyPlaceholderExpander
+    attr_reader :placeholders
+
+    # Get placeholders as a struct
+    #
+    # @param [Time]   time        the time
+    # @param [Hash]   record      the record
+    # @param [Hash]   opts        others
+    def prepare_placeholders(time, record, opts)
+      struct = UndefOpenStruct.new(record)
+      struct.time = time
+      opts.each {|key, val| struct.__send__("#{key}=", val) }
+      @placeholders = struct
+    end
+
+    # Replace placeholders in a string
+    #
+    # @param [String] str         the string to be replaced
+    def expand(str)
+      str = str.gsub(/\$\{([^}]+)\}/, '#{\1}') # ${..} => #{..}
+      eval "\"#{str}\"", @placeholders.instance_eval { binding }
+    end
+
+    class UndefOpenStruct < OpenStruct
+      (Object.instance_methods).each do |m|
+        undef_method m unless m.to_s =~ /^__|respond_to_missing\?|object_id|public_methods|instance_eval|method_missing|define_singleton_method|respond_to\?|new_ostruct_member/
+      end
     end
   end
 end
