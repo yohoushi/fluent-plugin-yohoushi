@@ -1,3 +1,9 @@
+## 0.1.0 (2014/01/29)
+
+Changes:
+
+* fluent-plugin-yohoushi is now a buffer plugin
+
 ## 0.0.5 (2014/01/25)
 
 Fixes:
