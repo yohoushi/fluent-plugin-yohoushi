@@ -19,9 +19,8 @@ describe Fluent::YohoushiOutput do
   let(:yohoushi_base_uri) { 'http://localhost:4804' }
   let(:growthforecast_base_uri) { 'http://localhost:5125' }
   let(:tag) { 'test' }
-  let(:driver) { Fluent::Test::OutputTestDriver.new(Fluent::YohoushiOutput, tag).configure(config) }
+  let(:driver) { Fluent::Test::BufferedOutputTestDriver.new(Fluent::YohoushiOutput, tag).configure(config) }
   let(:instance) { driver.instance }
-  let(:emit) { driver.run { messages.each {|message| driver.emit(message, time) } } }
 
   describe 'test configure' do
     context "empty" do
@@ -80,6 +79,7 @@ describe Fluent::YohoushiOutput do
   end
 
   describe 'test emit' do
+    let(:emit) { d = driver; messages.each {|message| d.emit(message, time) }; d.run; }
     let(:time) { Time.now.to_i }
     let(:messages) do
       [
@@ -144,7 +144,7 @@ describe Fluent::YohoushiOutput do
     let(:tag) { 'fluent.error' }
     let(:time) { Time.now.to_i }
     let(:record) { { 'foo_count' => "1" } }
-    let(:emit) { driver.run { driver.emit(record, time) } }
+    let(:emit) { d = driver; d.emit(record, time); d.run; }
     let(:expected_path)  { "/fluent/error/fluent.error/1/foo_count/#{Time.at(time)}" }
     let(:expected_value) { '1' }
     before { driver.instance.should_receive(:post).with(expected_path, expected_value) }
@@ -173,7 +173,7 @@ describe Fluent::YohoushiOutput do
     let(:tag) { 'fluent.error' }
     let(:time) { Time.now.to_i }
     let(:record) { { 'foo_count' => "1" } }
-    let(:emit) { driver.run { driver.emit(record, time) } }
+    let(:emit) { d = driver; d.emit(record, time); d.run; }
     let(:expected_path)  { "/fluent/error/fluent.error/1/foo_count/#{Time.at(time)}" }
     let(:expected_value) { '1' }
     before { driver.instance.should_receive(:post).with(expected_path, expected_value) }

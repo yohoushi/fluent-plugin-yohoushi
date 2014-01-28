@@ -1,5 +1,5 @@
 module Fluent
-  class YohoushiOutput < Output
+  class YohoushiOutput < BufferedOutput
     Plugin.register_output('yohoushi', self)
 
     MAPPING_MAX_NUM = 20
@@ -32,6 +32,16 @@ module Fluent
       end
     end
     config_param :enable_ruby, :bool, :default => true # true for lower version compatibility
+
+    # Override default parameters of Bufferedoutput options
+    config_param :buffer_type, :string, :default => 'memory'
+    config_param :flush_interval, :time, :default => 0 # we can not wait 1 minute to create 1 minute graphs (originally, 60)
+    config_param :try_flush_interval, :float, :default => 1 # we would be able to shorten more
+    config_param :retry_limit, :integer, :default => 1 # growthforecast requires a realtime post, so retry only once (originally, 17)
+    config_param :retry_wait, :time, :default => 1.0
+    config_param :max_retry_wait, :time, :default => nil
+    config_param :num_threads, :integer, :default => 1
+    config_param :queued_chunk_flush_interval, :time, :default => 1
 
     # for test
     attr_reader :client
@@ -106,29 +116,31 @@ module Fluent
       $log.warn "out_yohoushi: #{e.class} #{e.message} #{e.backtrace.first}"
     end
 
-    def emit(tag, es, chain)
-      tag_parts = tag.split('.')
-      tag_prefix = tag_prefix(tag_parts)
-      tag_suffix = tag_suffix(tag_parts)
-      placeholders = {
-        'tag' => tag,
-        'tags' => tag_parts, # for lower compatibility
-        'tag_parts' => tag_parts,
-        'tag_prefix' => tag_prefix,
-        'tag_suffix' => tag_suffix,
-        'hostname' => @hostname,
-      }
-      if @key_pattern
-        es.each do |time, record|
+    def format(tag, time, record)
+      [tag, time, record].to_msgpack
+    end
+
+    def write(chunk)
+      chunk.msgpack_each do |tag, time, record|
+        tag_parts = tag.split('.')
+        tag_prefix = tag_prefix(tag_parts)
+        tag_suffix = tag_suffix(tag_parts)
+        placeholders = {
+          'tag' => tag,
+          'tags' => tag_parts, # for lower compatibility
+          'tag_parts' => tag_parts,
+          'tag_prefix' => tag_prefix,
+          'tag_suffix' => tag_suffix,
+          'hostname' => @hostname,
+        }
+        if @key_pattern
           record.each do |key, value|
             next unless key =~ @key_pattern
             placeholders['key'] = key
             path = expand_placeholder(@key_pattern_path, time, record, placeholders)
             post(path, value)
           end
-        end
-      else # keys
-        es.each do |time, record|
+        else # keys
           @keys.each do |key, path|
             next unless value = record[key]
             placeholders['key'] = key
@@ -137,8 +149,6 @@ module Fluent
           end
         end
       end
-
-      chain.next
     rescue => e
       $log.warn "out_yohoushi: #{e.class} #{e.message} #{e.backtrace.first}"
     end
