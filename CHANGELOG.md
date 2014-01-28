@@ -1,3 +1,9 @@
+## 0.1.1 (2014/01/29)
+
+Enhancement:
+
+* Enrich log a bit
+
 ## 0.1.0 (2014/01/29)
 
 Changes:
