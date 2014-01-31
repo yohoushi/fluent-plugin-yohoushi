@@ -1,5 +1,7 @@
+require_relative 'async_output'
+
 module Fluent
-  class YohoushiOutput < BufferedOutput
+  class YohoushiOutput < MyAsyncOutput
     Plugin.register_output('yohoushi', self)
 
     MAPPING_MAX_NUM = 20
@@ -32,17 +34,6 @@ module Fluent
       end
     end
     config_param :enable_ruby, :bool, :default => true # true for lower version compatibility
-
-    # Override default parameters of Bufferedoutput options
-    config_param :buffer_type, :string, :default => 'memory'
-    config_param :flush_interval, :time, :default => 0 # we can not wait 1 minute to create 1 minute graphs (originally, 60)
-    config_param :try_flush_interval, :float, :default => 1 # we would be able to shorten more
-    config_param :retry_limit, :integer, :default => 0 # growthforecast requires a realtime post, so do not retry (originally, 17)
-    config_param :retry_wait, :time, :default => 1.0
-    config_param :max_retry_wait, :time, :default => nil
-    config_param :num_threads, :integer, :default => 1
-    config_param :queued_chunk_flush_interval, :time, :default => 1
-
     # for test
     attr_reader :client
     attr_reader :mapping
@@ -112,23 +103,17 @@ module Fluent
     end
 
     def post(path, number)
-      timeout(20.0) {
-        if @enable_float_number
-          @client.post_graph(path, { 'number' => number.to_f, 'mode' => @mode.to_s })
-        else
-          @client.post_graph(path, { 'number' => number.to_i, 'mode' => @mode.to_s })
-        end
-      }
+      if @enable_float_number
+        @client.post_graph(path, { 'number' => number.to_f, 'mode' => @mode.to_s })
+      else
+        @client.post_graph(path, { 'number' => number.to_i, 'mode' => @mode.to_s })
+      end
     rescue => e
       $log.warn "out_yohoushi: #{e.class} #{e.message} #{path} #{e.backtrace.first}"
     end
 
-    def format(tag, time, record)
-      [tag, time, record].to_msgpack
-    end
-
-    def write(chunk)
-      chunk.msgpack_each do |tag, time, record|
+    def write(events)
+      events.each do |tag, time, record|
         tag_parts = tag.split('.')
         tag_prefix = tag_prefix(tag_parts)
         tag_suffix = tag_suffix(tag_parts)
@@ -158,7 +143,6 @@ module Fluent
       end
     rescue => e
       $log.warn "out_yohoushi: #{e.class} #{e.message} #{e.backtrace.first}"
-      # Here, no raise of an error, so this BufferedOutput does not retry
     end
 
     def expand_placeholder(value, time, record, opts)
