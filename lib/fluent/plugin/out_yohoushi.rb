@@ -64,6 +64,11 @@ module Fluent
           @mapping[from] = to
         end
         @client = MultiForecast::Client.new('mapping' => @mapping) unless @mapping.empty?
+        @client.clients.each { |c|
+          c.connect_timeout = 5.0
+          c.send_timeout = 5.0
+          c.receive_timeout = 5.0
+        }
       end
       raise ConfigError, "Either of `base_uri` or `mapping1` must be specified" unless @client
 
@@ -107,11 +112,13 @@ module Fluent
     end
 
     def post(path, number)
-      if @enable_float_number
-        @client.post_graph(path, { 'number' => number.to_f, 'mode' => @mode.to_s })
-      else
-        @client.post_graph(path, { 'number' => number.to_i, 'mode' => @mode.to_s })
-      end
+      timeout(20.0) {
+        if @enable_float_number
+          @client.post_graph(path, { 'number' => number.to_f, 'mode' => @mode.to_s })
+        else
+          @client.post_graph(path, { 'number' => number.to_i, 'mode' => @mode.to_s })
+        end
+      }
     rescue => e
       $log.warn "out_yohoushi: #{e.class} #{e.message} #{path} #{e.backtrace.first}"
     end
