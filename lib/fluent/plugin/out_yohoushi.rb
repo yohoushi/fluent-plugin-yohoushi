@@ -55,11 +55,6 @@ module Fluent
           @mapping[from] = to
         end
         @client = MultiForecast::Client.new('mapping' => @mapping) unless @mapping.empty?
-        @client.clients.each { |c|
-          c.connect_timeout = 5.0
-          c.send_timeout = 5.0
-          c.receive_timeout = 5.0
-        }
       end
       raise ConfigError, "Either of `base_uri` or `mapping1` must be specified" unless @client
 
