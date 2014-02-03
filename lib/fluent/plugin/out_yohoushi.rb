@@ -1,5 +1,7 @@
+require_relative 'async_output'
+
 module Fluent
-  class YohoushiOutput < Output
+  class YohoushiOutput < MyAsyncOutput
     Plugin.register_output('yohoushi', self)
 
     MAPPING_MAX_NUM = 20
@@ -110,29 +112,27 @@ module Fluent
       $log.warn "out_yohoushi: #{e.class} #{e.message} #{path} #{e.backtrace.first}"
     end
 
-    def emit(tag, es, chain)
-      tag_parts = tag.split('.')
-      tag_prefix = tag_prefix(tag_parts)
-      tag_suffix = tag_suffix(tag_parts)
-      placeholders = {
-        'tag' => tag,
-        'tags' => tag_parts, # for lower compatibility
-        'tag_parts' => tag_parts,
-        'tag_prefix' => tag_prefix,
-        'tag_suffix' => tag_suffix,
-        'hostname' => @hostname,
-      }
-      if @key_pattern
-        es.each do |time, record|
+    def write(events)
+      events.each do |tag, time, record|
+        tag_parts = tag.split('.')
+        tag_prefix = tag_prefix(tag_parts)
+        tag_suffix = tag_suffix(tag_parts)
+        placeholders = {
+          'tag' => tag,
+          'tags' => tag_parts, # for lower compatibility
+          'tag_parts' => tag_parts,
+          'tag_prefix' => tag_prefix,
+          'tag_suffix' => tag_suffix,
+          'hostname' => @hostname,
+        }
+        if @key_pattern
           record.each do |key, value|
             next unless key =~ @key_pattern
             placeholders['key'] = key
             path = expand_placeholder(@key_pattern_path, time, record, placeholders)
             post(path, value)
           end
-        end
-      else # keys
-        es.each do |time, record|
+        else # keys
           @keys.each do |key, path|
             next unless value = record[key]
             placeholders['key'] = key
@@ -141,8 +141,6 @@ module Fluent
           end
         end
       end
-
-      chain.next
     rescue => e
       $log.warn "out_yohoushi: #{e.class} #{e.message} #{e.backtrace.first}"
     end

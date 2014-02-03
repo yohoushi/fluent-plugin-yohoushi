@@ -1,5 +1,6 @@
 # encoding: UTF-8
 require_relative 'spec_helper'
+require 'fluent/test/async_output_test'
 
 shared_context "stub_yohoushi_post_graph" do |path|
   before do
@@ -19,7 +20,7 @@ describe Fluent::YohoushiOutput do
   let(:yohoushi_base_uri) { 'http://localhost:4804' }
   let(:growthforecast_base_uri) { 'http://localhost:5125' }
   let(:tag) { 'test' }
-  let(:driver) { Fluent::Test::OutputTestDriver.new(Fluent::YohoushiOutput, tag).configure(config) }
+  let(:driver) { Fluent::Test::MyAsyncOutputTestDriver.new(Fluent::YohoushiOutput, tag).configure(config) }
   let(:instance) { driver.instance }
 
   describe 'test configure' do
