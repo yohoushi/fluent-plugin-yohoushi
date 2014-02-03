@@ -1,3 +1,9 @@
+## 0.1.2 (2014/02/03)
+
+Fixes:
+
+* Revert background post. I met troubles that fluentd process does not die.
+
 ## 0.1.1 (2014/01/29)
 
 Enhancement:
@@ -8,7 +14,7 @@ Enhancement:
 
 Changes:
 
-* fluent-plugin-yohoushi is now a buffer plugin
+* fluent-plugin-yohoushi is now a buffered plugin, it will post in background
 
 ## 0.0.5 (2014/01/25)
 
