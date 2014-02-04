@@ -2,6 +2,11 @@ module Fluent
   class YohoushiOutput < Output
     Plugin.register_output('yohoushi', self)
 
+    # To support log_level option implemented by Fluentd v0.10.43
+    unless method_defined?(:log)
+      define_method("log") { $log }
+    end
+
     MAPPING_MAX_NUM = 20
     KEY_MAX_NUM = 20
 
@@ -53,11 +58,6 @@ module Fluent
           @mapping[from] = to
         end
         @client = MultiForecast::Client.new('mapping' => @mapping) unless @mapping.empty?
-        @client.clients.each { |c|
-          c.connect_timeout = 5.0
-          c.send_timeout = 5.0
-          c.receive_timeout = 5.0
-        }
       end
       raise ConfigError, "Either of `base_uri` or `mapping1` must be specified" unless @client
 
@@ -107,7 +107,7 @@ module Fluent
         @client.post_graph(path, { 'number' => number.to_i, 'mode' => @mode.to_s })
       end
     rescue => e
-      $log.warn "out_yohoushi: #{e.class} #{e.message} #{path} #{e.backtrace.first}"
+      log.warn "out_yohoushi: #{e.class} #{e.message} #{path} #{e.backtrace.first}"
     end
 
     def emit(tag, es, chain)
@@ -144,7 +144,7 @@ module Fluent
 
       chain.next
     rescue => e
-      $log.warn "out_yohoushi: #{e.class} #{e.message} #{e.backtrace.first}"
+      log.warn "out_yohoushi: #{e.class} #{e.message} #{e.backtrace.first}"
     end
 
     def expand_placeholder(value, time, record, opts)
@@ -195,7 +195,7 @@ module Fluent
 
       def expand(str)
         str.gsub(/(\${[a-z_]+(\[-?[0-9]+\])?}|__[A-Z_]+__)/) {
-          $log.warn "record_reformer: unknown placeholder `#{$1}` found" unless @placeholders.include?($1)
+          log.warn "record_reformer: unknown placeholder `#{$1}` found" unless @placeholders.include?($1)
           @placeholders[$1]
         }
       end
