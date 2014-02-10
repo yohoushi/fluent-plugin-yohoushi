@@ -19,7 +19,7 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
 
   s.add_runtime_dependency "fluentd"
-  s.add_runtime_dependency "growthforecast-client", ">= 0.80.0"
+  s.add_runtime_dependency "growthforecast-client", ">= 0.80.1"
   s.add_runtime_dependency "multiforecast-client"
   s.add_runtime_dependency "yohoushi-client"
 
