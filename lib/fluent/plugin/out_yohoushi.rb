@@ -101,43 +101,47 @@ module Fluent
     end
 
     def post(path, number)
-      if @enable_float_number
-        @client.post_graph(path, { 'number' => number.to_f, 'mode' => @mode.to_s })
-      else
-        @client.post_graph(path, { 'number' => number.to_i, 'mode' => @mode.to_s })
+      report_time(" path:#{path}", "trace") do
+        if @enable_float_number
+          @client.post_graph(path, { 'number' => number.to_f, 'mode' => @mode.to_s })
+        else
+          @client.post_graph(path, { 'number' => number.to_i, 'mode' => @mode.to_s })
+        end
       end
     rescue => e
       log.warn "out_yohoushi: #{e.class} #{e.message} #{path} #{e.backtrace.first}"
     end
 
     def emit(tag, es, chain)
-      tag_parts = tag.split('.')
-      tag_prefix = tag_prefix(tag_parts)
-      tag_suffix = tag_suffix(tag_parts)
-      placeholders = {
-        'tag' => tag,
-        'tags' => tag_parts, # for lower compatibility
-        'tag_parts' => tag_parts,
-        'tag_prefix' => tag_prefix,
-        'tag_suffix' => tag_suffix,
-        'hostname' => @hostname,
-      }
-      if @key_pattern
-        es.each do |time, record|
-          record.each do |key, value|
-            next unless key =~ @key_pattern
-            placeholders['key'] = key
-            path = expand_placeholder(@key_pattern_path, time, record, placeholders)
-            post(path, value)
+      report_time(" tag:#{tag}", "debug") do
+        tag_parts = tag.split('.')
+        tag_prefix = tag_prefix(tag_parts)
+        tag_suffix = tag_suffix(tag_parts)
+        placeholders = {
+          'tag' => tag,
+          'tags' => tag_parts, # for lower compatibility
+          'tag_parts' => tag_parts,
+          'tag_prefix' => tag_prefix,
+          'tag_suffix' => tag_suffix,
+          'hostname' => @hostname,
+        }
+        if @key_pattern
+          es.each do |time, record|
+            record.each do |key, value|
+              next unless key =~ @key_pattern
+              placeholders['key'] = key
+              path = expand_placeholder(@key_pattern_path, time, record, placeholders)
+              post(path, value)
+            end
           end
-        end
-      else # keys
-        es.each do |time, record|
-          @keys.each do |key, path|
-            next unless value = record[key]
-            placeholders['key'] = key
-            path = expand_placeholder(path, time, record, placeholders)
-            post(path, value)
+        else # keys
+          es.each do |time, record|
+            @keys.each do |key, path|
+              next unless value = record[key]
+              placeholders['key'] = key
+              path = expand_placeholder(path, time, record, placeholders)
+              post(path, value)
+            end
           end
         end
       end
@@ -169,6 +173,13 @@ module Fluent
         rev_tag_suffix[i] = "#{rev_tag_parts[i]}.#{rev_tag_suffix[i-1]}"
       end
       rev_tag_suffix.reverse
+    end
+
+    def report_time(msg = nil, level = "debug", &blk)
+      t = Time.now
+      output = yield
+      log.__send__(level, sprintf("out_yohoushi: elapsed_time:%.2f thread_id:%s%s caller:%s", (Time.now - t).to_f, Thread.current.object_id, msg, caller()[0]))
+      output
     end
 
     class PlaceholderExpander
