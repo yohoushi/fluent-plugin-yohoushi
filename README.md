@@ -9,7 +9,7 @@ Fluentd plugin to post data to yohoushi where [yohoushi](http://yohoushi.github.
       base_uri http://yohoushi.local:4804
       key1 foo_count /foobar/foo_count
       key2 bar_count /foobar/bar_count
-    </source>
+    </match>
 
 Assuming following inputs are coming:
 
