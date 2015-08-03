@@ -1,3 +1,14 @@
+## 0.1.4 (2015/08/03)
+
+Enhancement:
+
+* report elapsed_time on debug log level
+* Increase MAPPING_MAX_NUM and KEY_MAX_NUM to 1024
+
+Other:
+
+* Remove support for 1.9.2
+
 ## 0.1.3 (2014/02/04)
 
 Enhancement:
