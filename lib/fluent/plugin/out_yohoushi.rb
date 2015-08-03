@@ -7,8 +7,8 @@ module Fluent
       define_method("log") { $log }
     end
 
-    MAPPING_MAX_NUM = 20
-    KEY_MAX_NUM = 20
+    MAPPING_MAX_NUM = 1024
+    KEY_MAX_NUM = 1024
 
     def initialize
       super
