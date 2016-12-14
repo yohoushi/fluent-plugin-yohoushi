@@ -63,8 +63,8 @@ describe Fluent::YohoushiOutput do
         key1 foo_count /foobar/foo_count
         key2 bar_count /foobar/bar_count
       ]}
-      it { subject.keys["foo_count"].should == "/foobar/foo_count" }
-      it { subject.keys["bar_count"].should == "/foobar/bar_count" }
+      it { expect(subject.keys["foo_count"]).to eq("/foobar/foo_count") }
+      it { expect(subject.keys["bar_count"]).to eq("/foobar/bar_count") }
     end
 
     context "key_pattern" do
@@ -73,8 +73,8 @@ describe Fluent::YohoushiOutput do
         base_uri #{yohoushi_base_uri}
         key_pattern _count$ /foobar/${key}
       ]}
-      it { subject.key_pattern.should == Regexp.compile("_count$") }
-      it { subject.key_pattern_path.should == "/foobar/${key}" }
+      it { expect(subject.key_pattern).to eq(Regexp.compile("_count$")) }
+      it { expect(subject.key_pattern_path).to eq("/foobar/${key}") }
     end
   end
 
@@ -97,7 +97,7 @@ describe Fluent::YohoushiOutput do
 
       include_context "stub_yohoushi_post_graph", "path/to/foo_count" unless ENV["MOCK"] == "off"
       include_context "stub_yohoushi_post_graph", "path/to/bar_count" unless ENV["MOCK"] == "off"
-      before { Fluent::Engine.stub(:now).and_return(time) }
+      before { allow(Fluent::Engine).to receive(:now).and_return(time) }
       it { emit }
     end
 
@@ -109,7 +109,7 @@ describe Fluent::YohoushiOutput do
 
       include_context "stub_yohoushi_post_graph", "path/to/foo_count" unless ENV["MOCK"] == "off"
       include_context "stub_yohoushi_post_graph", "path/to/bar_count" unless ENV["MOCK"] == "off"
-      before { Fluent::Engine.stub(:now).and_return(time) }
+      before { allow(Fluent::Engine).to receive(:now).and_return(time) }
       it { emit }
     end
 
@@ -122,7 +122,7 @@ describe Fluent::YohoushiOutput do
 
       include_context "stub_growthforecast_post_graph", "path/to/foo_count" unless ENV["MOCK"] == "off"
       include_context "stub_growthforecast_post_graph", "path/to/bar_count" unless ENV["MOCK"] == "off"
-      before { Fluent::Engine.stub(:now).and_return(time) }
+      before { allow(Fluent::Engine).to receive(:now).and_return(time) }
       it { emit }
     end
 
@@ -134,7 +134,7 @@ describe Fluent::YohoushiOutput do
 
       include_context "stub_growthforecast_post_graph", "path/to/foo_count" unless ENV["MOCK"] == "off"
       include_context "stub_growthforecast_post_graph", "path/to/bar_count" unless ENV["MOCK"] == "off"
-      before { Fluent::Engine.stub(:now).and_return(time) }
+      before { allow(Fluent::Engine).to receive(:now).and_return(time) }
       it { emit }
     end
   end
@@ -147,7 +147,7 @@ describe Fluent::YohoushiOutput do
     let(:emit) { d = driver; d.emit(record, time); d.run; }
     let(:expected_path)  { "/fluent/error/fluent.error/1/foo_count/#{Time.at(time)}" }
     let(:expected_value) { '1' }
-    before { driver.instance.should_receive(:post).with(expected_path, expected_value) }
+    before { expect(driver.instance).to receive(:post).with(expected_path, expected_value) }
 
     context 'keyN' do
       let(:config) {%[
@@ -176,7 +176,7 @@ describe Fluent::YohoushiOutput do
     let(:emit) { d = driver; d.emit(record, time); d.run; }
     let(:expected_path)  { "/fluent/error/fluent.error/1/foo_count/#{Time.at(time)}" }
     let(:expected_value) { '1' }
-    before { driver.instance.should_receive(:post).with(expected_path, expected_value) }
+    before { expect(driver.instance).to receive(:post).with(expected_path, expected_value) }
 
     context 'keyN' do
       let(:config) {%[
